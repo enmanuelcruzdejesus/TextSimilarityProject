@@ -1,5 +1,5 @@
 from collections import defaultdict
-from gensim import corpora
+from gensim import corpora, similarities
 
 
 def creating_corpus():
@@ -40,7 +40,8 @@ def creating_corpus():
 
 def make_dictionary(texts):
     dictionary = corpora.Dictionary(texts)
-    return dictionary
+    feature_len = len(dictionary.token2id)
+    return dictionary, feature_len
 
 
 def vectorization(text, dictionary):
@@ -51,6 +52,18 @@ def tfidf_transform(corpus):
     from gensim import models
 
     tfidf = models.TfidfModel(corpus)  # step 1 -- initialize a model
+    return tfidf
+
+
+def vector_by_tfidf(bow_vect, tfidf):
+    tfidf_vect = tfidf[bow_vect]
+    return tfidf_vect
+
+
+def text_similarity(tfidf_vect1, tfidf_vect2, feature_len):
+    index = similarities.SparseMatrixSimilarity([tfidf_vect1], num_features=feature_len)
+    sim = index[tfidf_vect2]
+    return sim
 
 
 def transforming_tfidf_vecot(corpus, tfidf):
