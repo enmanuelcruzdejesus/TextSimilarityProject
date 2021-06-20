@@ -1,6 +1,8 @@
 from collections import defaultdict
 from gensim import corpora, similarities
-
+import numpy
+from numpy import dot
+from numpy.linalg import norm
 
 def creating_corpus():
 
@@ -61,8 +63,16 @@ def vector_by_tfidf(bow_vect, tfidf):
 
 
 def text_similarity(tfidf_vect1, tfidf_vect2, feature_len):
-    index = similarities.SparseMatrixSimilarity([tfidf_vect1], num_features=feature_len)
-    sim = index[tfidf_vect2]
+    comp_vect1 = numpy.zeros(feature_len, dtype=float)
+    comp_vect2 = numpy.zeros(feature_len, dtype=float)
+    for pos, val in tfidf_vect1:
+        comp_vect1[pos] = val
+    for pos, val in tfidf_vect2:
+        comp_vect2[pos] = val
+
+    sim = dot(comp_vect1, comp_vect2)/(norm(comp_vect1)*norm(comp_vect2))
+    # index = similarities.SparseMatrixSimilarity([tfidf_vect1], num_features=feature_len)
+    # sim = index[tfidf_vect2]
     return sim
 
 
