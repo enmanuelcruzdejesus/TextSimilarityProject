@@ -81,6 +81,16 @@ def test_similarity(txt_idx1, txt_idx2, tfidf_model, bow_corpus, feature_len):
     return similarity
 
 
+def test_all_similarity(all_file_names, all_txt, txt_idx1, tfidf_model, bow_corpus, feature_len):
+    for txt_idx in range(len(all_txt)):
+        similarity = test_similarity(txt_idx1, txt_idx, tfidf_model, bow_corpus, feature_len)
+        print("selected first txt file: {}".format(all_file_names[txt_idx1]))
+        print("selected first text: {}".format(all_txt[txt_idx1]))
+        print("selected second txt file: {}".format(all_file_names[txt_idx]))
+        print("selected second text: {}".format(all_txt[txt_idx]))
+        print("similarity of two text: {}".format(similarity))
+
+
 def processing_txt(txt_dir):
     all_txt = []
     all_file_names = []
@@ -111,14 +121,9 @@ def processing_txt(txt_dir):
     print("all txt files: {}".format(all_file_names))
     print("you can change the value of txt_idx1, txt_idx2 from 0 to {}".format(len(all_file_names)-1))
     txt_idx1 = 1
-    txt_idx2 = 10
-    sim_val = test_similarity(txt_idx1, txt_idx2, tfidf_model, bow_corpus, feature_len)
-    print("selected first txt file: {}".format(all_file_names[txt_idx1]))
-    print("selected first text: {}".format(all_txt[txt_idx1]))
-    print("selected second txt file: {}".format(all_file_names[txt_idx2]))
-    print("selected second text: {}".format(all_txt[txt_idx2]))
-
-    print("similarity of two text: {}".format(sim_val))
+    # txt_idx2 = 10
+    # sim_val = test_similarity(txt_idx1, txt_idx2, tfidf_model, bow_corpus, feature_len)
+    test_all_similarity(all_file_names, all_txt, txt_idx1, tfidf_model, bow_corpus, feature_len)
 
 
 if __name__ == "__main__":
