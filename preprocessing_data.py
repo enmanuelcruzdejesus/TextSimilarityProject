@@ -3,7 +3,7 @@ import string
 import nltk
 from nltk.corpus import stopwords
 from nltk import word_tokenize, PorterStemmer, pos_tag
-from nltk_preprocess import make_dictionary, vectorization
+from nltk_preprocess import make_dictionary, vectorization, tfidf_transform, vector_by_tfidf, text_similarity
 
 
 def preprocessing_nltk(txt_data):
@@ -72,9 +72,19 @@ def read_all_txt(txt_file):
     return " ".join(all_phases)
 
 
+def test_similarity(txt_idx1, txt_idx2, tfidf_model, bow_corpus, feature_len):
+    bow_vect1 = bow_corpus[txt_idx1]
+    bow_vect2 = bow_corpus[txt_idx2]
+    tfidf_vect1 = vector_by_tfidf(bow_vect1, tfidf_model)
+    tfidf_vect2 = vector_by_tfidf(bow_vect2, tfidf_model)
+    similarity = text_similarity(tfidf_vect1, tfidf_vect2, feature_len)
+    return similarity
+
+
 def processing_txt(txt_dir):
     all_txt = []
     all_file_names = []
+    print("building corpus")
     for txt_file in os.listdir(txt_dir):
         if txt_file.find(".txt") == -1:
             continue
@@ -82,19 +92,33 @@ def processing_txt(txt_dir):
         # if txt_file != "g1pB_taska.txt":
         #    continue
 
-        print("txt file: {}".format(txt_file))
+        # print("txt file: {}".format(txt_file))
         txt_data = read_all_txt(os.path.join(txt_dir, txt_file))
         _, filtered_words, _, _ = preprocessing_nltk(txt_data)
         all_txt.append(filtered_words)
         all_file_names.append(txt_file)
 
     # make test data
-    dict_data = make_dictionary(all_txt)
+    dict_data, feature_len = make_dictionary(all_txt)
     for text, txt_file in zip(all_txt, all_file_names):
         text_vect = vectorization(text, dict_data)
-        print("txt file: {}".format(txt_file))
-        print("text: {}".format(text))
-        print("text vector: {}".format(text_vect))
+        #print("txt file: {}".format(txt_file))
+        #print("text: {}".format(text))
+        #print("text vector: {}".format(text_vect))
+    bow_corpus = [vectorization(text, dict_data) for text in all_txt]
+    tfidf_model = tfidf_transform(bow_corpus)
+
+    print("all txt files: {}".format(all_file_names))
+    print("you can change the value of txt_idx1, txt_idx2 from 0 to {}".format(len(all_file_names)-1))
+    txt_idx1 = 1
+    txt_idx2 = 10
+    sim_val = test_similarity(txt_idx1, txt_idx2, tfidf_model, bow_corpus, feature_len)
+    print("selected first txt file: {}".format(all_file_names[txt_idx1]))
+    print("selected first text: {}".format(all_txt[txt_idx1]))
+    print("selected second txt file: {}".format(all_file_names[txt_idx2]))
+    print("selected second text: {}".format(all_txt[txt_idx2]))
+
+    print("similarity of two text: {}".format(sim_val))
 
 
 if __name__ == "__main__":
