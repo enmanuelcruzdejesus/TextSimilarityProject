@@ -4,6 +4,7 @@ import nltk
 from nltk.corpus import stopwords
 from nltk import word_tokenize, PorterStemmer, pos_tag
 from nltk_preprocess import make_dictionary, vectorization, tfidf_transform, vector_by_tfidf, text_similarity
+from nltk.tokenize import sent_tokenize
 
 
 def preprocessing_nltk(txt_data):
@@ -38,6 +39,16 @@ def preprocessing_nltk(txt_data):
     # [('truth', 'NN'), ('universally', 'RB'), ('acknowledged', 'VBD'), ('single', 'JJ'), ('man', 'NN'),
     # ('possession', 'NN'), ('good', 'JJ'), ('fortune', 'NN'), ('must', 'MD'), ('want', 'VB'), ('wife', 'NN')]
     return words, filtered_words, stemmed, pos
+
+
+def all_sents(txt_data):
+    all_sent = sent_tokenize(txt_data.lower())
+    sent_data = []
+    for sent in all_sent:
+        words, sent_words, stemmed, pos = preprocessing_nltk(sent)
+        sent_data.append(sent_words)
+
+    return sent_data
 
 
 def read_txt(txt_file):
@@ -81,6 +92,28 @@ def test_similarity(txt_idx1, txt_idx2, tfidf_model, bow_corpus, feature_len):
     return similarity
 
 
+def test_sent_similarity(txt_idx1, txt_idx2, tfidf_model, sent_corpus, feature_len):
+    ref_bow_vects = sent_corpus[txt_idx1]
+    comp_bow_vect2 = sent_corpus[txt_idx2]
+    cutt_off_prob = 0.3
+
+    # compare similarity
+    all_score_pair = []
+    for idx_ref, bow_vect1 in enumerate(ref_bow_vects):
+        max_similarity = 0
+        max_idx = 0
+        tfidf_vect1 = vector_by_tfidf(bow_vect1, tfidf_model)
+        for idx_doc, bow_vect2 in enumerate(comp_bow_vect2):
+            tfidf_vect2 = vector_by_tfidf(bow_vect2, tfidf_model)
+            similarity = text_similarity(tfidf_vect1, tfidf_vect2, feature_len)
+            if similarity > max_similarity:
+                max_similarity = similarity
+                max_idx = idx_doc
+        if max_similarity > cutt_off_prob:
+            all_score_pair.append([max_similarity, max_idx])
+    return all_score_pair
+
+
 def test_all_similarity(all_file_names, all_txt, txt_idx1, tfidf_model, bow_corpus, feature_len):
     for txt_idx in range(len(all_txt)):
         similarity = test_similarity(txt_idx1, txt_idx, tfidf_model, bow_corpus, feature_len)
@@ -91,9 +124,20 @@ def test_all_similarity(all_file_names, all_txt, txt_idx1, tfidf_model, bow_corp
         print("similarity of two text: {}".format(similarity))
 
 
+def test_sent_all_similarity(all_file_names, all_txt, txt_idx1, tfidf_model, sent_bow_corpus, feature_len):
+    for txt_idx in range(len(all_txt)):
+        all_similarity = test_sent_similarity(txt_idx1, txt_idx, tfidf_model, sent_bow_corpus, feature_len)
+        print("selected first txt file: {}".format(all_file_names[txt_idx1]))
+        print("selected first text: {}".format(all_txt[txt_idx1]))
+        print("selected second txt file: {}".format(all_file_names[txt_idx]))
+        print("selected second text: {}".format(all_txt[txt_idx]))
+        print("similarity of two text: {}".format(all_similarity))
+
+
 def processing_txt(txt_dir):
     all_txt = []
     all_file_names = []
+    all_sent_words = []
     print("building corpus")
     for txt_file in os.listdir(txt_dir):
         if txt_file.find(".txt") == -1:
@@ -105,6 +149,8 @@ def processing_txt(txt_dir):
         # print("txt file: {}".format(txt_file))
         txt_data = read_all_txt(os.path.join(txt_dir, txt_file))
         _, filtered_words, _, _ = preprocessing_nltk(txt_data)
+        sent_words = all_sents(txt_data)
+        all_sent_words.append(sent_words)
         all_txt.append(filtered_words)
         all_file_names.append(txt_file)
 
@@ -118,12 +164,20 @@ def processing_txt(txt_dir):
     bow_corpus = [vectorization(text, dict_data) for text in all_txt]
     tfidf_model = tfidf_transform(bow_corpus)
 
+    # calculate bow by sentence
+    doc_bow_corpus = []
+    for doc_txt in all_sent_words:
+        sent_bow_corpus = [vectorization(text, dict_data) for text in doc_txt]
+        doc_bow_corpus.append(sent_bow_corpus)
+
+
     print("all txt files: {}".format(all_file_names))
     print("you can change the value of txt_idx1, txt_idx2 from 0 to {}".format(len(all_file_names)-1))
     txt_idx1 = 1
     # txt_idx2 = 10
     # sim_val = test_similarity(txt_idx1, txt_idx2, tfidf_model, bow_corpus, feature_len)
-    test_all_similarity(all_file_names, all_txt, txt_idx1, tfidf_model, bow_corpus, feature_len)
+    #test_all_similarity(all_file_names, all_txt, txt_idx1, tfidf_model, bow_corpus, feature_len)
+    test_sent_all_similarity(all_file_names, all_txt, txt_idx1, tfidf_model, doc_bow_corpus, feature_len)
 
 
 if __name__ == "__main__":
