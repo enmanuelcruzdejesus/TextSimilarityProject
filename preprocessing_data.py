@@ -44,11 +44,13 @@ def preprocessing_nltk(txt_data):
 def all_sents(txt_data):
     all_sent = sent_tokenize(txt_data.lower())
     sent_data = []
+    orig_sent = []
     for sent in all_sent:
         words, sent_words, stemmed, pos = preprocessing_nltk(sent)
         sent_data.append(sent_words)
+        orig_sent.append(words)
 
-    return sent_data
+    return orig_sent, sent_data
 
 
 def read_txt(txt_file):
@@ -138,6 +140,8 @@ def processing_txt(txt_dir):
     all_txt = []
     all_file_names = []
     all_sent_words = []
+    all_orig_sent_words = []
+
     print("building corpus")
     for txt_file in os.listdir(txt_dir):
         if txt_file.find(".txt") == -1:
@@ -149,7 +153,8 @@ def processing_txt(txt_dir):
         # print("txt file: {}".format(txt_file))
         txt_data = read_all_txt(os.path.join(txt_dir, txt_file))
         _, filtered_words, _, _ = preprocessing_nltk(txt_data)
-        sent_words = all_sents(txt_data)
+        orig_words, sent_words = all_sents(txt_data)
+        all_orig_sent_words.append(orig_words)
         all_sent_words.append(sent_words)
         all_txt.append(filtered_words)
         all_file_names.append(txt_file)
@@ -170,14 +175,24 @@ def processing_txt(txt_dir):
         sent_bow_corpus = [vectorization(text, dict_data) for text in doc_txt]
         doc_bow_corpus.append(sent_bow_corpus)
 
-
     print("all txt files: {}".format(all_file_names))
     print("you can change the value of txt_idx1, txt_idx2 from 0 to {}".format(len(all_file_names)-1))
-    txt_idx1 = 1
-    # txt_idx2 = 10
+    ref_idx = 1
+    comp_idx = 10
     # sim_val = test_similarity(txt_idx1, txt_idx2, tfidf_model, bow_corpus, feature_len)
-    #test_all_similarity(all_file_names, all_txt, txt_idx1, tfidf_model, bow_corpus, feature_len)
-    test_sent_all_similarity(all_file_names, all_txt, txt_idx1, tfidf_model, doc_bow_corpus, feature_len)
+    # test_all_similarity(all_file_names, all_txt, txt_idx1, tfidf_model, bow_corpus, feature_len)
+    # test_sent_all_similarity(all_file_names, all_txt, txt_idx1, tfidf_model, doc_bow_corpus, feature_len)
+    all_similarity = test_sent_similarity(ref_idx, comp_idx, tfidf_model, doc_bow_corpus, feature_len)
+    print("selected first txt file: {}".format(all_file_names[ref_idx]))
+    print("selected first text: {}".format(all_txt[ref_idx]))
+    print("selected second txt file: {}".format(all_file_names[comp_idx]))
+    print("selected second text: {}".format(all_txt[comp_idx]))
+    print("similarity of two text: {}".format(all_similarity))
+    similar_sentence = []
+    for score, best_idx in all_similarity:
+        similar_sentence.append(" ".join(all_orig_sent_words[comp_idx][best_idx]))
+
+    print("similar sentences: {}".format(similar_sentence))
 
 
 if __name__ == "__main__":
